@@ -14,6 +14,10 @@ client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 class ChatRequest(BaseModel):
     message: str
 
+class GenericChatRequest(BaseModel):
+    message: str
+    history: list[dict] = []
+
   # Tool definition — tells Claude what the tool does and what args it takes
 TOOLS = [
     {
@@ -106,3 +110,23 @@ def chat_with_tools(
         )
 
     return {"reply": response.content[0].text}
+
+@router.post("/chat/general")
+def general_chat(
+    payload: GenericChatRequest,
+    current_user: User = Depends(get_current_user)
+):
+    messages = [{"role": m["role"], "content": m["content"]} for m in payload.history]
+    messages.append({"role": "user", "content": payload.message})
+
+    def generate():
+        with client.messages.stream(
+            model="claude-sonnet-4-6",
+            max_tokens=2048,
+            system="You are a helpful AI assistant. Answer any question clearly and concisely.",
+            messages=messages
+        ) as stream:
+            for chunk in stream.text_stream:
+                yield f"data: {chunk}\n\n"
+
+    return StreamingResponse(generate(), media_type="text/event-stream")

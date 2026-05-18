@@ -3,11 +3,13 @@ from sqlalchemy.orm import Session
 from typing import List
 import uuid
 from routers import auth
+from routers import ai
 from auth import get_current_user
 
 from database import engine, get_db, Base
 from models import Task, User
 from schemas import TaskCreate, TaskResponse, TaskUpdate
+from routers import rag
 
 Base.metadata.create_all(bind=engine)
 
@@ -15,6 +17,8 @@ app = FastAPI()
 all_tasks: List[Task] = []
 
 app.include_router(auth.router)
+app.include_router(ai.router)
+app.include_router(rag.router)
 
 @app.post("/tasks", response_model=TaskResponse)
 def create_task(payload: TaskCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
