@@ -6,12 +6,10 @@ from routers import auth
 from routers import ai
 from auth import get_current_user
 
-from database import engine, get_db, Base
+from database import get_db, Base
 from models import Task, User
 from schemas import TaskCreate, TaskResponse, TaskUpdate
 from routers import rag
-
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 all_tasks: List[Task] = []

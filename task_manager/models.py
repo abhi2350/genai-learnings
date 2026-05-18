@@ -1,15 +1,16 @@
 # defines the tasks table
-from sqlalchemy import Column, String, Boolean, ForeignKey
+from sqlalchemy import Column, String, Boolean, ForeignKey, Integer
 from database import Base
 from pgvector.sqlalchemy import Vector
 
 class Task(Base):
-  __tablename__ = "tasks"
-  
-  id = Column(String, primary_key=True)
-  title = Column(String, nullable=False)
-  done = Column(Boolean, default=False)
-  user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    __tablename__ = "tasks"
+
+    id = Column(String, primary_key=True)
+    title = Column(String, nullable=False)
+    done = Column(Boolean, default=False)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    priority = Column(Integer, default=2, nullable=False, server_default="2")
 
 
 class User(Base):

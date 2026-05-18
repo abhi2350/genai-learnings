@@ -36,9 +36,15 @@ A full-stack AI-powered Task Manager built with **FastAPI**, **PostgreSQL**, **C
 │   ├── models.py            # SQLAlchemy ORM models
 │   ├── schemas.py           # Pydantic schemas
 │   ├── auth.py              # JWT auth helpers
+│   ├── alembic.ini          # Alembic config
 │   ├── requirements.txt
 │   ├── Dockerfile
 │   ├── docker-compose.yml
+│   ├── migrations/
+│   │   ├── env.py           # Alembic env (pgvector-aware)
+│   │   └── versions/
+│   │       ├── cec715623924_initial_tables.py
+│   │       └── 92c71d6b9cae_add_priority_to_tasks.py
 │   └── routers/
 │       ├── auth.py          # /auth/register, /auth/login
 │       ├── ai.py            # /ai/chat, /ai/chat/stream, /ai/chat/tools, /ai/chat/general
@@ -119,6 +125,63 @@ npm run dev
 ```
 
 The UI will be available at `http://localhost:5173`.
+
+## Database Migrations (Alembic)
+
+Migrations live in `task_manager/migrations/versions/`. All commands must be run from inside `task_manager/`.
+
+```bash
+cd task_manager
+```
+
+### Apply all migrations
+
+```bash
+alembic upgrade head
+```
+
+### Roll back one migration
+
+```bash
+alembic downgrade -1
+```
+
+### Roll back to a specific revision
+
+```bash
+alembic downgrade cec715623924
+```
+
+### Roll back all migrations
+
+```bash
+alembic downgrade base
+```
+
+### Generate a new migration (autogenerate from models)
+
+```bash
+alembic revision --autogenerate -m "describe your change"
+```
+
+### View current revision
+
+```bash
+alembic current
+```
+
+### View migration history
+
+```bash
+alembic history --verbose
+```
+
+### Migration history
+
+| Revision | Description |
+|----------|-------------|
+| `cec715623924` | Initial tables — users, tasks, document_chunks, uploaded_files |
+| `92c71d6b9cae` | Add `priority` column to tasks |
 
 ## API Endpoints
 
