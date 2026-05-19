@@ -1,6 +1,6 @@
 # Task Manager API
 
-A full-stack AI-powered Task Manager built with **FastAPI**, **PostgreSQL**, **Claude (Sonnet)**, and a **React/TypeScript** chat UI.
+A full-stack AI-powered Task Manager built with **FastAPI**, **PostgreSQL**, **Claude (Sonnet)**, a **React/TypeScript** chat UI, and an **MCP server** for AI assistant integrations.
 
 ## Features
 
@@ -11,6 +11,7 @@ A full-stack AI-powered Task Manager built with **FastAPI**, **PostgreSQL**, **C
 - Tool use — Claude can query live task stats
 - RAG pipeline — ingest documents, upload PDFs, and query with vector search
 - React + TypeScript chat UI with conversation history and file upload
+- MCP server — expose tasks to any MCP-compatible AI client (Claude Desktop, etc.)
 - Docker + Docker Compose for one-command setup
 
 ## Tech Stack
@@ -22,6 +23,7 @@ A full-stack AI-powered Task Manager built with **FastAPI**, **PostgreSQL**, **C
 - [Anthropic SDK](https://github.com/anthropics/anthropic-sdk-python) — Claude Sonnet 4.6
 - [Ollama](https://ollama.com/) (`nomic-embed-text`) — local embeddings
 - [python-jose](https://github.com/mpdavis/python-jose) + [bcrypt](https://pypi.org/project/bcrypt/) — auth
+- [MCP (FastMCP)](https://github.com/jlowin/fastmcp) — Model Context Protocol server
 
 **Frontend**
 - [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
@@ -36,6 +38,7 @@ A full-stack AI-powered Task Manager built with **FastAPI**, **PostgreSQL**, **C
 │   ├── models.py            # SQLAlchemy ORM models
 │   ├── schemas.py           # Pydantic schemas
 │   ├── auth.py              # JWT auth helpers
+│   ├── mcp_server.py        # MCP server (FastMCP)
 │   ├── alembic.ini          # Alembic config
 │   ├── requirements.txt
 │   ├── Dockerfile
@@ -125,6 +128,45 @@ npm run dev
 ```
 
 The UI will be available at `http://localhost:5173`.
+
+## MCP Server
+
+The MCP server exposes task operations as tools consumable by any MCP-compatible AI client (Claude Desktop, Cursor, etc.).
+
+### Tools
+
+| Tool | Description |
+|------|-------------|
+| `create_task` | Create a new task |
+| `get_tasks` | List all tasks |
+| `update_task` | Update title or done status by ID |
+| `delete_task` | Delete a task by ID |
+| `get_task_stats` | Get total, completed, and pending counts |
+
+### Run the MCP server
+
+```bash
+cd task_manager
+python mcp_server.py
+```
+
+### Connect to Claude Desktop
+
+Add this to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "task-manager": {
+      "command": "python",
+      "args": ["/absolute/path/to/task_manager/mcp_server.py"],
+      "env": {
+        "DATABASE_URL": "postgresql://user:password@localhost:5432/taskdb"
+      }
+    }
+  }
+}
+```
 
 ## Database Migrations (Alembic)
 
