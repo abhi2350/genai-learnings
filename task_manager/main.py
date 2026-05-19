@@ -4,6 +4,7 @@ from typing import List
 import uuid
 from routers import auth
 from routers import ai
+from routers import agent
 from auth import get_current_user
 
 from database import get_db, Base
@@ -17,6 +18,7 @@ all_tasks: List[Task] = []
 app.include_router(auth.router)
 app.include_router(ai.router)
 app.include_router(rag.router)
+app.include_router(agent.router)
 
 @app.post("/tasks", response_model=TaskResponse)
 def create_task(payload: TaskCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
