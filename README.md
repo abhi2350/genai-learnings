@@ -12,6 +12,9 @@ A full-stack AI-powered Task Manager built with **FastAPI**, **PostgreSQL**, **C
 - RAG pipeline — ingest documents, upload PDFs, and query with vector search
 - React + TypeScript chat UI with conversation history and file upload
 - MCP server — expose tasks to any MCP-compatible AI client (Claude Desktop, etc.)
+- Agentic loop — Claude autonomously creates, updates, and deletes tasks via tool use
+- Structured output — extract typed task data from free-form text using `client.messages.parse`
+- RAG evaluation — score RAG answers for faithfulness and relevance using Claude
 - Docker + Docker Compose for one-command setup
 
 ## Tech Stack
@@ -39,6 +42,8 @@ A full-stack AI-powered Task Manager built with **FastAPI**, **PostgreSQL**, **C
 │   ├── schemas.py           # Pydantic schemas
 │   ├── auth.py              # JWT auth helpers
 │   ├── mcp_server.py        # MCP server (FastMCP)
+│   ├── structured_output_demo.py  # Extract tasks from text via messages.parse
+│   ├── eval_rag.py          # RAG evaluation — faithfulness & relevance scoring
 │   ├── alembic.ini          # Alembic config
 │   ├── requirements.txt
 │   ├── Dockerfile
@@ -51,7 +56,8 @@ A full-stack AI-powered Task Manager built with **FastAPI**, **PostgreSQL**, **C
 │   └── routers/
 │       ├── auth.py          # /auth/register, /auth/login
 │       ├── ai.py            # /ai/chat, /ai/chat/stream, /ai/chat/tools, /ai/chat/general
-│       └── rag.py           # /rag/ingest, /rag/upload, /rag/query, /rag/chat, /rag/files
+│       ├── rag.py           # /rag/ingest, /rag/upload, /rag/query, /rag/chat, /rag/files
+│       └── agent.py         # /agent/chat — agentic loop with full task CRUD tools
 └── chat-ui/                 # React + TypeScript frontend
     └── src/
         ├── App.tsx
@@ -258,6 +264,46 @@ alembic history --verbose
 | POST   | `/rag/query`    | One-shot question over documents     |
 | POST   | `/rag/chat`     | Streaming chat over documents (SSE)  |
 | GET    | `/rag/files`    | List uploaded files                  |
+
+### Agent (JWT required)
+| Method | Endpoint       | Description                                              |
+|--------|----------------|----------------------------------------------------------|
+| POST   | `/agent/chat`  | Agentic loop — Claude autonomously manages tasks via tools |
+
+## Standalone Scripts
+
+### Structured Output Demo
+
+Extracts tasks (title, priority, done) from free-form text using `client.messages.parse` and Pydantic models.
+
+```bash
+cd task_manager
+python structured_output_demo.py
+```
+
+**Example input:** `"I urgently need to buy groceries, finish the report by Friday, and call mom sometime this week"`
+
+**Output:**
+```
+[○] [high] Buy groceries
+[○] [high] Finish the report
+[○] [low] Call mom
+```
+
+### RAG Evaluation
+
+Scores RAG answers for faithfulness and relevance using Claude as a judge. Outputs per-answer scores and an overall summary.
+
+```bash
+cd task_manager
+python eval_rag.py
+```
+
+**Metrics:**
+- `score` — 1 (terrible) to 5 (perfect)
+- `faithful` — is the answer grounded in the retrieved context?
+- `relevant` — does it address the question?
+- Summary includes average score, faithfulness rate, and relevance rate
 
 ## Interactive Docs
 
