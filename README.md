@@ -270,6 +270,51 @@ alembic history --verbose
 |--------|----------------|----------------------------------------------------------|
 | POST   | `/agent/chat`  | Agentic loop — Claude autonomously manages tasks via tools |
 
+## query_gpt Agent
+
+A multi-step natural-language-to-SQL pipeline built with Claude structured output and a live PostgreSQL schema.
+
+### How it works
+
+1. **Table selection** — given a question, Claude picks the minimum set of tables needed
+2. **Column pruning** — Claude narrows each table down to only the relevant columns
+3. **SQL generation** — Claude writes a single PostgreSQL `SELECT` query from the pruned schema
+4. **Execution** — the query is run against the real database and results are returned
+
+### Run
+
+```bash
+cd agents/query_gpt
+python agent_try.py
+```
+
+**Example:**
+
+```python
+run_pipeline("How many orders are in each status?")
+# Returns: { sql, explanation, question, rows, tables_used }
+```
+
+### Structure
+
+```
+agents/query_gpt/
+├── agent_try.py   # Pipeline: select_tables → prune_columns → generate_sql → execute
+├── database.py    # get_schema() and execute_sql() via psycopg2
+├── agents.py
+├── main.py
+└── requirements.txt
+```
+
+### Environment
+
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/yourdb
+ANTHROPIC_API_KEY=your-anthropic-api-key
+```
+
+---
+
 ## Standalone Scripts
 
 ### Structured Output Demo
