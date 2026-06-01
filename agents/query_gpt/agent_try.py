@@ -3,10 +3,19 @@ from anthropic import Anthropic
 from pydantic import BaseModel
 from database import execute_sql, get_schema
 from dotenv import load_dotenv
+from langfuse import observe
+from langfuse import get_client
 
 load_dotenv()
 
 client = Anthropic()
+langfuse = get_client()
+
+def _record_usage(response) -> None:
+    langfuse.update_current_generation(
+        usage_details={"input": response.usage.input_tokens, "output": response.usage.output_tokens},
+        model="claude-opus-4-7",
+    )
 
 class TableSelection(BaseModel):
       tables: List[str]
@@ -25,6 +34,7 @@ class GeneratedSQL(BaseModel):
     sql: str
     explanation: str
 
+@observe()
 def select_tables(question: str, schema: dict) -> TableSelection:
     table_list = list(schema.keys())
 
@@ -40,9 +50,11 @@ def select_tables(question: str, schema: dict) -> TableSelection:
         messages=[{"role": "user", "content": msg}],
         output_format=TableSelection,
     )
+    _record_usage(response)
     print(response.parsed_output)
     return response.parsed_output
 
+@observe()
 def prune_columns(question: str, selected_tables: List[str], schema: dict) -> PrunedSchema:
     result = {}
     for table in selected_tables:
@@ -64,8 +76,10 @@ def prune_columns(question: str, selected_tables: List[str], schema: dict) -> Pr
         }],
         output_format=PrunedSchema,
     )
+    _record_usage(response)
     return response.parsed_output
 
+@observe()
 def generate_sql(question: str, pruned: PrunedSchema) -> GeneratedSQL:
     # format pruned schema as compact text: "users(id, name), orders(user_id, total)"
     # ask Claude to write a single PostgreSQL SELECT query
@@ -88,8 +102,10 @@ def generate_sql(question: str, pruned: PrunedSchema) -> GeneratedSQL:
         }],
         output_format=GeneratedSQL,
     )
+    _record_usage(response)
     return response.parsed_output
 
+@observe()
 def run_pipeline(question: str) -> dict:
     schema = get_schema()
     pruned_schema = select_tables(question, schema)

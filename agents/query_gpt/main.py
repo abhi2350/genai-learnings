@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from database import get_schema, execute_sql, schema_to_text
-from agents import run_pipeline
+from agent_try import run_pipeline
 
 app = FastAPI(title="QueryGPT — Natural Language to SQL")
 

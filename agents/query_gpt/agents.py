@@ -1,9 +1,11 @@
 from typing import List
 from pydantic import BaseModel
 from anthropic import Anthropic
+from langfuse import observe, get_client
 from database import get_schema, schema_to_text
 
 client = Anthropic()
+langfuse = get_client()
 SYSTEM = "You are a SQL expert. You write precise, efficient PostgreSQL queries."
 
 
@@ -33,8 +35,16 @@ class GeneratedSQL(BaseModel):
     explanation: str  # plain-English description of what the query does
 
 
+def _record_usage(response) -> None:
+    langfuse.update_current_generation(
+        usage={"input": response.usage.input_tokens, "output": response.usage.output_tokens},
+        model="claude-opus-4-7",
+    )
+
+
 # ── Agent 1: pick relevant tables ────────────────────────────────────────────
 
+@observe()
 def select_tables(question: str, all_tables: List[str]) -> TableSelection:
     table_list = ", ".join(all_tables)
     response = client.messages.parse(
@@ -52,11 +62,13 @@ def select_tables(question: str, all_tables: List[str]) -> TableSelection:
         }],
         output_format=TableSelection,
     )
+    _record_usage(response)
     return response.parsed_output
 
 
 # ── Agent 2: prune irrelevant columns ────────────────────────────────────────
 
+@observe()
 def prune_columns(question: str, selected_tables: List[str], full_schema: dict) -> PrunedSchema:
     subset = {t: full_schema[t] for t in selected_tables if t in full_schema}
     schema_text = schema_to_text(subset)
@@ -76,11 +88,13 @@ def prune_columns(question: str, selected_tables: List[str], full_schema: dict) 
         }],
         output_format=PrunedSchema,
     )
+    _record_usage(response)
     return response.parsed_output
 
 
 # ── Agent 3: generate SQL ─────────────────────────────────────────────────────
 
+@observe()
 def generate_sql(question: str, pruned: PrunedSchema) -> GeneratedSQL:
     schema_lines = []
     for t in pruned.tables:
@@ -104,11 +118,13 @@ def generate_sql(question: str, pruned: PrunedSchema) -> GeneratedSQL:
         }],
         output_format=GeneratedSQL,
     )
+    _record_usage(response)
     return response.parsed_output
 
 
 # ── Full pipeline ─────────────────────────────────────────────────────────────
 
+@observe()
 def run_pipeline(question: str) -> dict:
     full_schema = get_schema()
     all_tables = list(full_schema.keys())

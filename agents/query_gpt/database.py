@@ -1,5 +1,4 @@
 import os
-from unittest import result
 import psycopg2
 import psycopg2.extras
 from dotenv import load_dotenv
@@ -64,17 +63,14 @@ load_dotenv()
 #             return [dict(row) for row in cur.fetchall()]
 
 
-# def schema_to_text(schema: dict[str, list[dict]]) -> str:
-#     """Format schema as human-readable text for prompts."""
-#     lines = []
-#     for table, columns in schema.items():
-#         lines.append(f"Table: {table}")
-#         for col in columns:
-#             ref = f"  → {col['references']}" if col.get("references") else ""
-#             nullable = " (nullable)" if col["nullable"] else ""
-#             lines.append(f"  - {col['column']}: {col['type']}{nullable}{ref}")
-#         lines.append("")
-#     return "\n".join(lines)
+def schema_to_text(schema: dict) -> str:
+    lines = []
+    for table, columns in schema.items():
+        lines.append(f"Table: {table}")
+        for col in columns:
+            lines.append(f"  - {col}")
+        lines.append("")
+    return "\n".join(lines)
 
 
 def get_connection():
